@@ -1,4 +1,4 @@
-import pytest.fixture
+import pytest
 
 
 @pytest.fixture
