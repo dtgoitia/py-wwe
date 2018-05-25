@@ -47,7 +47,7 @@ def deserialize_toggl(obj):
         new_obj = []
         for v in obj:
             new_obj.append(deserialize_toggl(v))
-    elif isinstance(obj, str):
+    elif isinstance(obj, str) and (len(TOGGL_TIMESTAMP_FORMAT) + 5 == len(obj)):
         new_obj = read_toggl_timestamp(obj)
     else:
         new_obj = obj
@@ -69,14 +69,11 @@ class TogglAPI(object):
             raise ValueError(response.text)
         return response.json()
 
-    def clients(self, workspace_id):
-        """Get Projects by Workspace ID"""
-        return self.get(section=f'workspaces/{workspace_id}/clients')
-
     def get_time_entries(self, start_date: datetime.datetime=None, end_date: datetime.datetime =None):
         """
         Get Time Entries JSON object from Toggl within a given start_date
         and an end_date with a given timezone
+
          {'at': '2018-05-23T15:04:45+00:00',
           'billable': False,
           'description': 'General',
@@ -98,13 +95,51 @@ class TogglAPI(object):
         response = self.get(section='time_entries', params=p)
         return deserialize_toggl(response)
 
-    def projects(self, workspace_id=''):
+    def get_clients(self, workspace_id):
         """Get Projects by Workspace ID"""
+        return self.get(section=f'workspaces/{workspace_id}/clients')
+
+    def get_projects(self, workspace_id):
+        """Get Projects by Workspace ID
+
+         [{'active': True,
+           'actual_hours': 9,
+           'at': '2018-03-02T13:59:37+00:00',
+           'auto_estimates': False,
+           'billable': False,
+           'cid': 38084455,
+           'color': '11',
+           'created_at': '2018-02-06T08:10:31+00:00',
+           'hex_color': '#205500',
+           'id': 97990398,
+           'is_private': False,
+           'name': 'Software Imaging',
+           'template': False,
+           'wid': 1819588}]
+        """
         return self.get(section=f'workspaces/{workspace_id}/projects')
 
-    def workspaces(self):
-        """Get Workspaces"""
-        return self.get(section='workspace')
+    def get_workspaces(self):
+        """Get Workspaces
 
-    def me(self):
+         [{'admin': True,
+           'api_token': '3e609bd47750eb70df49d1e8182e6bd5',
+           'at': '2016-12-28T02:26:24+00:00',
+           'default_currency': 'USD',
+           'default_hourly_rate': 0,
+           'ical_enabled': True,
+           'id': 1819588,
+           'name': "David Torralba Goitia's workspace",
+           'only_admins_may_create_projects': False,
+           'only_admins_see_billable_rates': False,
+           'only_admins_see_team_dashboard': False,
+           'premium': False,
+           'profile': 0,
+           'projects_billable_by_default': True,
+           'rounding': 1,
+           'rounding_minutes': 0}]
+        """
+        return self.get(section='workspaces')
+
+    def get_me(self):
         return self.get(section='me')

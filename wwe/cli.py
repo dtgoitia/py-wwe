@@ -1,8 +1,10 @@
 from pprint import pprint as print
+import functools
 from wwe.toggl import TogglWrap
 from wwe.config import import_config
 from wwe.recorder import Task, BankHoliday, PersonalHoliday, Recorder
 from wwe.gov import gov_uk_bank_holidays_between
+from typing import List
 import datetime
 
 
@@ -72,16 +74,41 @@ def main2():
     print(summary)
 
 
-# "Software Imaging",
-def is_work(client, entry):
-    client.get_clients()
-    if entry['']:
-        pass
+def get_project_ids(target_client: str, t: TogglWrap):
+    work_projects = set()
+    for workspace in t.toggl.get_workspaces():
+        workspace_id = workspace['id']
+        clients = t.toggl.get_clients(workspace_id=workspace_id)
+        projects = t.toggl.get_projects(workspace_id=workspace_id)
+        for client in clients:
+            client_name = client['name']
+            if target_client != client_name:
+                continue
+            client_id = client['id']
+            for project in projects:
+                project_client = project.get('cid')
+                if project_client != client_id:
+                    continue
+                work_projects.add(project['id'])
+    return work_projects
+
+
+def is_work(entry: dict, work_projects: List[str]):
+    # print(f'{entry["pid"]} in {work_projects}')
+    if entry['pid'] in work_projects:
+        return True
+    return False
 
 
 def main():
     config = import_config('./config.json')
     toggl_token = config['toggl_token']
+    start = datetime.datetime.strptime(config['client']['start_date'], '%Y-%m-%dT%H:%M:%S')
     t = TogglWrap(token=toggl_token)
-    print(t.toggl.workspaces())
-    # print(t.get_today())
+    project_ids = get_project_ids(target_client=config['client']['name'], t=t)
+    filters = [functools.partial(is_work, work_projects=project_ids)]
+    total_duration = datetime.timedelta()
+    for entry in t.get_filtered_entries(filters=filters, start=start):
+        duration = entry['duration']
+        total_duration += duration
+    print(str(total_duration))

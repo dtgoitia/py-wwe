@@ -4,11 +4,11 @@ from wwe.toggl_api import TogglAPI
 # import pprint
 
 
-def filter_entries(self, entries, filters):
+def filter_entries(entries, filters):
     filtered_entries = []
     for entry in entries:
-        for filter in filters:
-            if not filter(entry):
+        for filter_func in filters:
+            if not filter_func(entry):
                 break
         else:
             filtered_entries.append(entry)
@@ -20,9 +20,11 @@ class TogglWrap:
         assert token
         self.toggl = TogglAPI(api_token=token)
 
-    def get_today(self):
-        today_start = datetime.combine(date.today(), datetime.min.time())
-        return self.toggl.get_time_entries(start_date=today_start)
+    def get_filtered_entries(self, filters, start: datetime=None, end: datetime=None):
+        if start is None:
+            start = datetime.combine(date.today(), datetime.min.time())
+        entries = self.toggl.get_time_entries(start_date=start, end_date=end)
+        return filter_entries(entries, filters)
 
     def _client_by_id(self, client_id: int):
         if not hasattr(self, "_clients"):
