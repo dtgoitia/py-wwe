@@ -11,8 +11,8 @@ def gov_uk_bank_holidays() -> set:
     url = 'https://www.gov.uk/bank-holidays.json'
     r = requests.get(url)
     data = r.json()
-    england_data = data.get('england-and-wales')
-    events = england_data.get('events')
+    england_data = data['england-and-wales']
+    events = england_data['events']
     result = set()
     for event in events:
         date_str = event.get('date')
