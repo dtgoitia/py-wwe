@@ -16,7 +16,7 @@ def write_toggl_timestamp(ts: datetime.datetime):
         return ''
     tz = ts.strftime('%z')
     if tz:
-        tz = f'{tz[:2]}:{tz[3:]}'
+        tz = f'{tz[:3]}:{tz[3:]}'
     else:
         tz = '+00:00'
     return ts.strftime(TOGGL_TIMESTAMP_FORMAT) + tz
@@ -47,7 +47,7 @@ def deserialize_toggl(obj):
         new_obj = []
         for v in obj:
             new_obj.append(deserialize_toggl(v))
-    elif isinstance(obj, str) and (len(TOGGL_TIMESTAMP_FORMAT) + 5 == len(obj)):
+    elif isinstance(obj, str):
         new_obj = read_toggl_timestamp(obj)
     else:
         new_obj = obj
@@ -69,7 +69,7 @@ class TogglAPI(object):
             raise ValueError(response.text)
         return response.json()
 
-    def get_time_entries(self, start_date: datetime.datetime=None, end_date: datetime.datetime =None):
+    def get_time_entries(self, start_date: datetime.datetime, end_date: datetime.datetime=None):
         """
         Get Time Entries JSON object from Toggl within a given start_date
         and an end_date with a given timezone
@@ -88,12 +88,27 @@ class TogglAPI(object):
           'uid': 2626092,
           'wid': 1819588},
         """
+        assert start_date.tzinfo is not None
+        if end_date:
+            assert end_date.tzinfo is not None
         p = {
             'start_date': write_toggl_timestamp(start_date),
             'end_date': write_toggl_timestamp(end_date),
         }
-        response = self.get(section='time_entries', params=p)
-        return deserialize_toggl(response)
+
+        last_entry_date = datetime.datetime(datetime.MINYEAR, 1, 1, tzinfo=start_date.tzinfo)
+        if end_date is None:
+            end_date = datetime.datetime(datetime.MAXYEAR, 1, 1, tzinfo=start_date.tzinfo)
+        while last_entry_date < end_date:
+            response = self.get(section='time_entries', params=p)
+            entries = deserialize_toggl(response)
+            if not entries:
+                break
+            for entry in entries:
+                yield entry
+                last_entry_date = entry['start']
+            print(last_entry_date)
+            p['start_date'] = write_toggl_timestamp(last_entry_date + datetime.timedelta(seconds=1))
 
     def get_clients(self, workspace_id):
         """Get Projects by Workspace ID"""

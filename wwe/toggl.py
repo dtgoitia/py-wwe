@@ -1,18 +1,26 @@
 from datetime import datetime, timedelta, date
-# from wwe.config import import_config
 from wwe.toggl_api import TogglAPI
+from tzlocal import get_localzone
 # import pprint
 
 
 def filter_entries(entries, filters):
-    filtered_entries = []
     for entry in entries:
         for filter_func in filters:
             if not filter_func(entry):
                 break
         else:
-            filtered_entries.append(entry)
-    return filtered_entries
+            yield entry
+
+
+def ensure_datetime_timezone(timestamp):
+    if timestamp is None:
+        return
+    current_tz = timestamp.tzinfo
+    local_tz = get_localzone()
+    if current_tz == local_tz:
+        return timestamp
+    return timestamp.astimezone(local_tz)
 
 
 class TogglWrap:
@@ -22,9 +30,11 @@ class TogglWrap:
 
     def get_filtered_entries(self, filters, start: datetime=None, end: datetime=None):
         if start is None:
-            start = datetime.combine(date.today(), datetime.min.time())
+            start = datetime.combine(date.today(), datetime.min.utctime())
+        start, end = (ensure_datetime_timezone(x) for x in (start, end))
         entries = self.toggl.get_time_entries(start_date=start, end_date=end)
-        return filter_entries(entries, filters)
+        for entry in filter_entries(entries, filters):
+            yield entry
 
     def _client_by_id(self, client_id: int):
         if not hasattr(self, "_clients"):
