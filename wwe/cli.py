@@ -2,76 +2,42 @@ from pprint import pprint as print
 import functools
 from wwe.toggl import TogglWrap
 from wwe.config import import_config
-from wwe.recorder import Task, BankHoliday, PersonalHoliday, Recorder
 from wwe.gov import gov_uk_bank_holidays_between
 from typing import List
 import datetime
 
 
-def toggl_entry_to_task(entry: dict) -> Task:
-    start = entry.get('start')
-    end = entry.get('stop', datetime.now())
-    project = entry.get('project')
-    description = entry.get('description')
-    task = Task(start, end, project, description)
-    return task
+# (start, end)
+# (00:00:00, 23:59:59)
+# (08:30:00, 16:00:00)
+
+def partition_days_between(start_date: datetime.datetime, end_date: datetime.datetime):
+    """
+    Generates a stream of tuples with two datetimes that run from the
+    start_date to the end_date.
+
+    Input> 2000-01-01 12:34:56 - 2000-01-03 19:00:19
+    Would generate:
+    (2000-01-01 12:34:56, 2000-01-01 23:59:59)
+    (2000-01-02 00:00:00, 2000-01-02 23:59:59)
+    (2000-01-03 00:00:00, 2000-01-03 19:00:19)
+    """
+    current_ts = start_date
+    while current_ts < end_date:
+        last_time_today = current_ts.replace(hour=23, minute=59, second=59)
+        yield (current_ts, last_time_today)
+        current_ts = last_time_today + datetime.timedelta(seconds=1)
 
 
-def toggl_entries_to_tasks(entries: set) -> set:
-    result = set()
-    for entry in entries:
-        task = toggl_entry_to_task(entry)
-        result.add(task)
-    return result
+def filter_out_weekends(times):
+    for start, end in times:
+        if start.weekday() < 5:
+            yield (start, end)
 
 
-def fetch_tasks(toggl_token: str, start: datetime) -> set:
-    t = TogglWrap(token=toggl_token)
-    toggl_tasks = t.tasks_from(start)
-    tasks = toggl_entries_to_tasks(toggl_tasks)
-    return tasks
-
-
-def gov_to_bank_holidays(gov_bank_holidays: set) -> set:
-    bank_holidays = set()
-    for gov_bank_holiday in gov_bank_holidays:
-        bank_holiday = BankHoliday(gov_bank_holiday)
-        bank_holidays.add(bank_holiday)
-    return bank_holidays
-
-
-def fetch_bank_holidays(start: datetime) -> set:
-    end = datetime.datetime.now()
-    gov_bank_holidays = gov_uk_bank_holidays_between(start, end)
-    bank_holidays = gov_to_bank_holidays(gov_bank_holidays)
-    return bank_holidays
-
-
-def fetch_personal_holidays(config_personal_holidays: list, start: datetime.datetime) -> set:
-    result = set()
-    for day in config_personal_holidays:
-        date = datetime.datetime.strptime(day, '%Y-%m-%d')
-        personal_holiday = PersonalHoliday(date)
-        result.add(personal_holiday)
-    return result
-
-
-def main2():
-    config = import_config('./config.json')
-    start_date = config['client']['start_date']
-    start = datetime.datetime.strptime(start_date, '%Y-%m-%d')
-
-    tasks = fetch_tasks(config['toggl_token'], start)
-    bank_holidays = fetch_bank_holidays(start)
-    personal_holidays = fetch_personal_holidays(config['client']['personal_holidays']['scheduled'], start)
-
-    r = Recorder(config['working_day_hours'])
-    r.add(tasks)
-    r.add(bank_holidays)
-    r.add(personal_holidays)
-
-    summary = r.summary()
-    print(summary)
+def filter_out_non_working_hours(times):
+    for start, end in times:
+        pass
 
 
 def get_project_ids(target_client: str, t: TogglWrap):
@@ -100,6 +66,25 @@ def is_work(entry: dict, work_projects: List[str]):
     return False
 
 
+def get_weekends_between(start: datetime.datetime, end: datetime.datetime) -> int:
+    result = 0
+    current_date = start
+    while current_date < end:
+        if current_date.weekday() > 4:
+            result += 1
+        current_date += datetime.timedelta(days=1)
+    return result
+
+
+def get_personal_holidays(days: any, start: datetime.datetime, end: datetime.datetime) -> float:
+    result = 0
+    for day in days:
+        current_day = datetime.datetime.strptime(day[0], '%Y-%m-%d')
+        if start <= current_day <= end:
+            result += float(day[1])
+    return result
+
+
 def main():
     config = import_config('./config.json')
     toggl_token = config['toggl_token']
@@ -107,8 +92,27 @@ def main():
     t = TogglWrap(token=toggl_token)
     project_ids = get_project_ids(target_client=config['client']['name'], t=t)
     filters = [functools.partial(is_work, work_projects=project_ids)]
-    total_duration = datetime.timedelta()
+    worked = datetime.timedelta()
     for entry in t.get_filtered_entries(filters=filters, start=start):
         duration = entry['duration']
-        total_duration += duration
-    print(str(total_duration))
+        worked += duration
+    # print(f"worked = {worked}")
+
+    now = datetime.datetime.now()
+    bank_holidays = len(gov_uk_bank_holidays_between(start, now))
+    weekends = get_weekends_between(start, now)
+    personal_holidays = get_personal_holidays(config['personal_holidays'], start, now)
+    full_timespan = now - start
+    days_to_work = full_timespan.days - bank_holidays - weekends - personal_holidays
+    hours_to_work = (days_to_work + 1) * config['working_day_hours']
+    to_work = datetime.timedelta(seconds=(hours_to_work*3600))
+    # print(f"---------------")
+    # print(f"days_to_work = {days_to_work}")
+    # print(f"personal_holidays = {personal_holidays}")
+    # print(f"bank_holidays = {bank_holidays}")
+    # print(f"---------------")
+    # print(f" worked = {worked}")
+    # print(f"to_work = {to_work}")
+    balance = worked - to_work
+    # print(f"---------------")
+    print(f"balance = {balance} (+extra/-left)")
