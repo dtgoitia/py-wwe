@@ -103,7 +103,7 @@ def is_work(entry: dict, work_projects: List[str]):
 def main():
     config = import_config('./config.json')
     toggl_token = config['toggl_token']
-    start = datetime.datetime.strptime(config['client']['start_date'], '%Y-%m-%dT%H:%M:%S')
+    start = datetime.datetime.strptime(config['client']['start_date'], '%Y-%m-%d')
     t = TogglWrap(token=toggl_token)
     project_ids = get_project_ids(target_client=config['client']['name'], t=t)
     filters = [functools.partial(is_work, work_projects=project_ids)]
