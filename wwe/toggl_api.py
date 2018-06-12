@@ -107,7 +107,7 @@ class TogglAPI(object):
             for entry in entries:
                 yield entry
                 last_entry_date = entry['start']
-            print(last_entry_date)
+            # print(last_entry_date)
             p['start_date'] = write_toggl_timestamp(last_entry_date + datetime.timedelta(seconds=1))
 
     def get_clients(self, workspace_id):
