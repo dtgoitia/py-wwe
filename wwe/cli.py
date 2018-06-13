@@ -85,6 +85,13 @@ def get_personal_holidays(days: any, start: datetime.datetime, end: datetime.dat
     return result
 
 
+def print_balance(to_work: datetime.datetime, worked: datetime.datetime):
+    if to_work > worked:
+        print(f"balance = {to_work-worked} left")
+    else:
+        print(f"balance = {worked-to_work} done extra")
+
+
 def main():
     config = import_config('./config.json')
     toggl_token = config['toggl_token']
@@ -96,7 +103,6 @@ def main():
     for entry in t.get_filtered_entries(filters=filters, start=start):
         duration = entry['duration']
         worked += duration
-    # print(f"worked = {worked}")
 
     now = datetime.datetime.now()
     bank_holidays = len(gov_uk_bank_holidays_between(start, now))
@@ -106,13 +112,4 @@ def main():
     days_to_work = full_timespan.days - bank_holidays - weekends - personal_holidays
     hours_to_work = (days_to_work + 1) * config['working_day_hours']
     to_work = datetime.timedelta(seconds=(hours_to_work*3600))
-    # print(f"---------------")
-    # print(f"days_to_work = {days_to_work}")
-    # print(f"personal_holidays = {personal_holidays}")
-    # print(f"bank_holidays = {bank_holidays}")
-    # print(f"---------------")
-    # print(f" worked = {worked}")
-    # print(f"to_work = {to_work}")
-    balance = worked - to_work
-    # print(f"---------------")
-    print(f"balance = {balance} (+extra/-left)")
+    print_balance(to_work, worked)
