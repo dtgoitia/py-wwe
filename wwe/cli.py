@@ -102,6 +102,12 @@ def main():
     worked = datetime.timedelta()
     for entry in t.get_filtered_entries(filters=filters, start=start):
         duration = entry['duration']
+
+        # unfinished time entries have negative durations
+        if duration.days < 0:
+            tz = entry['start'].tzinfo
+            now = datetime.datetime.now(tz)
+            duration = now - entry['start']
         worked += duration
 
     now = datetime.datetime.now()
