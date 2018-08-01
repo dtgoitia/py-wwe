@@ -24,11 +24,10 @@ setup(
     include_package_data=True,
     zip_safe=False,
     keywords=['toggl'],     # TODO: Add relevant tags
-    install_requires=[],    # TODO: Automate extraction from Pipfile?
+    install_requires=["setuptools", "tzlocal"],    # TODO: Automate extraction from Pipfile?
     entry_points={
         "console_scripts": [
             'wwe=wwe.cli:main',
-            'wwe2=wwe.cli:main2',
         ],
     }
 )
