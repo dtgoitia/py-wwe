@@ -23,3 +23,7 @@ Therefore, to have specific models (storage) would be:
  - Personal bank Holiday days you are entitled to in a year
  - How many hours a week you need to work
  - When you want to be out
+
+## Configuration file
+
+The `wwe` command will look for the file `.wweconfig.json` in the `HOME` directory.

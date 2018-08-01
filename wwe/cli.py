@@ -5,6 +5,7 @@ from wwe.config import import_config
 from wwe.gov import gov_uk_bank_holidays_between
 from typing import List
 import datetime
+import os
 
 
 # (start, end)
@@ -100,7 +101,8 @@ def print_balance(to_work: datetime.datetime, worked: datetime.datetime):
 
 
 def main():
-    config = import_config('./config.json')
+    config_path = os.path.join(os.environ["HOMEPATH"], ".wweconfig.json")
+    config = import_config(config_path)
     toggl_token = config['toggl_token']
     start = datetime.datetime.strptime(config['client']['start_date'], '%Y-%m-%d')
     t = TogglWrap(token=toggl_token)
