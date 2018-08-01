@@ -85,11 +85,18 @@ def get_personal_holidays(days: any, start: datetime.datetime, end: datetime.dat
     return result
 
 
+def format_balance(delta: datetime.timedelta) -> str:
+    """
+    Remove the microseconds from the time delta
+    """
+    return str(datetime.timedelta(days=delta.days) + datetime.timedelta(seconds=delta.seconds))
+
+
 def print_balance(to_work: datetime.datetime, worked: datetime.datetime):
     if to_work > worked:
-        print(f"balance = {to_work-worked} left")
+        print(f"balance = {format_balance(to_work-worked)} left")
     else:
-        print(f"balance = {worked-to_work} done extra")
+        print(f"balance = {format_balance(worked-to_work)} done extra")
 
 
 def main():
@@ -119,3 +126,8 @@ def main():
     hours_to_work = (days_to_work + 1) * config['working_day_hours']
     to_work = datetime.timedelta(seconds=(hours_to_work*3600))
     print_balance(to_work, worked)
+
+
+# # Uncomment below to debug
+# if __name__ == "__main__":
+#     main()
