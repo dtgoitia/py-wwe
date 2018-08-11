@@ -101,7 +101,7 @@ def print_balance(to_work: datetime.datetime, worked: datetime.datetime):
 
 
 def main():
-    config_path = os.path.join(os.environ["HOMEPATH"], ".wweconfig.json")
+    config_path = os.path.join(os.path.expanduser('~'), ".wweconfig.json")
     config = import_config(config_path)
     toggl_token = config['toggl_token']
     start = datetime.datetime.strptime(config['client']['start_date'], '%Y-%m-%d')
