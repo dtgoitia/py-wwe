@@ -12,6 +12,8 @@ tzlocal = "*"
 "flake8" = "*"
 pytest = "*"
 rope = "*"
+"flake8-docstrings" = "*"
+"flake8-per-file-ignores" = "*"
 
 [requires]
 python_version = "3.6"
