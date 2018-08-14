@@ -5,6 +5,11 @@ from tzlocal import get_localzone
 
 
 def filter_entries(entries, filters):
+    """Apply filters to entries.
+
+    Every entry in `entries` with satisfies all the filters will be yielded. A filter is a function which returns
+    `True` or `False` given an `entry`.
+    """
     for entry in entries:
         for filter_func in filters:
             if not filter_func(entry):
@@ -14,6 +19,7 @@ def filter_entries(entries, filters):
 
 
 def ensure_datetime_timezone(timestamp):
+    """Ensure timezone is set."""
     if timestamp is None:
         return
     current_tz = timestamp.tzinfo
@@ -24,11 +30,15 @@ def ensure_datetime_timezone(timestamp):
 
 
 class TogglWrap:
+    """Toggl Client wrapper."""
+
     def __init__(self, token=""):
+        """Instantiate TogglAPI client if there a token is passed."""
         assert token
         self.toggl = TogglAPI(api_token=token)
 
     def get_filtered_entries(self, filters, start: datetime=None, end: datetime=None):
+        """Return only the entries between two given dates which pass the passed `filters`."""
         if start is None:
             start = datetime.combine(date.today(), datetime.min.utctime())
         start, end = (ensure_datetime_timezone(x) for x in (start, end))
@@ -69,6 +79,7 @@ class TogglWrap:
         return result
 
     def clients(self):
+        """Return all clients in all workspaces."""
         w = self.toggl.workspaces()
         id = w[0]["id"]
         clients = self.toggl.clients(workspace_id=id)
@@ -87,6 +98,7 @@ class TogglWrap:
         return result
 
     def projects(self):
+        """Return all projects in all workspaces."""
         w = self.toggl.workspaces()
         id = w[0]["id"]
         projects = self.toggl.projects(workspace_id=id)
@@ -106,7 +118,7 @@ class TogglWrap:
         return result
 
     def tasks(self, start: datetime, end: datetime, client=""):
-        """Return tasks from Toggl between two given dates for a client"""
+        """Return tasks from Toggl between two given dates for a client."""
         if self.toggl is not None:
             if start is not None and end is not None:
                 projects = self._project_by_client(client)

@@ -9,9 +9,7 @@ TOGGL_TIMESTAMP_FORMAT = '%Y-%m-%dT%H:%M:%S'
 
 
 def write_toggl_timestamp(ts: datetime.datetime):
-    """
-    Write datetime in toggl format or default to empty string
-    """
+    """Write datetime in toggl format or default to empty string."""
     if not ts:
         return ''
     tz = ts.strftime('%z')
@@ -23,18 +21,17 @@ def write_toggl_timestamp(ts: datetime.datetime):
 
 
 def read_toggl_timestamp(text: str):
-    """
-    Read datetime in toggl format or return None
-    """
+    """Read datetime in toggl format or return None."""
     try:
         ts, _, tz_2 = text.rpartition(':')
-        ts = datetime.datetime.strptime(ts+tz_2, '%Y-%m-%dT%H:%M:%S%z')
+        ts = datetime.datetime.strptime(ts + tz_2, '%Y-%m-%dT%H:%M:%S%z')
         return ts
     except (ValueError, AttributeError) as e:
         return text
 
 
 def deserialize_toggl(obj):
+    """Deserialize Toggl object."""
     new_obj = None
     if isinstance(obj, dict):
         new_obj = {}
@@ -55,14 +52,16 @@ def deserialize_toggl(obj):
 
 
 class TogglAPI(object):
-    """A wrapper for Toggl Api"""
+    """A wrapper for Toggl API."""
 
     def __init__(self, api_token):
+        """Initialize client."""
         self.session = requests.Session()
         self.session.auth = HTTPBasicAuth(api_token, 'api_token')
         self.session.headers = {'content-type': 'application/json'}
 
     def get(self, section, params=None):
+        """Request resources Toggl API endpoint."""
         response = self.session.get(
             f'https://www.toggl.com/api/v8/{section}', params=params)
         if not response.ok:
@@ -70,11 +69,9 @@ class TogglAPI(object):
         return response.json()
 
     def get_time_entries(self, start_date: datetime.datetime, end_date: datetime.datetime=None):
-        """
-        Get Time Entries JSON object from Toggl within a given start_date
-        and an end_date with a given timezone
+        """Get Time Entries JSON object from Toggl within a given start_date and an end_date with a given timezone.
 
-         {'at': '2018-05-23T15:04:45+00:00',
+        {'at': '2018-05-23T15:04:45+00:00',
           'billable': False,
           'description': 'General',
           'duration': 615,
@@ -111,13 +108,13 @@ class TogglAPI(object):
             p['start_date'] = write_toggl_timestamp(last_entry_date + datetime.timedelta(seconds=1))
 
     def get_clients(self, workspace_id):
-        """Get Projects by Workspace ID"""
+        """Get Projects by Workspace ID."""
         return self.get(section=f'workspaces/{workspace_id}/clients')
 
     def get_projects(self, workspace_id):
-        """Get Projects by Workspace ID
+        """Get Projects by Workspace ID.
 
-         [{'active': True,
+        [{'active': True,
            'actual_hours': 9,
            'at': '2018-03-02T13:59:37+00:00',
            'auto_estimates': False,
@@ -135,9 +132,9 @@ class TogglAPI(object):
         return self.get(section=f'workspaces/{workspace_id}/projects')
 
     def get_workspaces(self):
-        """Get Workspaces
+        """Get Workspaces.
 
-         [{'admin': True,
+        [{'admin': True,
            'api_token': '3e609bd47750eb70df49d1e8182e6bd5',
            'at': '2016-12-28T02:26:24+00:00',
            'default_currency': 'USD',
@@ -157,4 +154,5 @@ class TogglAPI(object):
         return self.get(section='workspaces')
 
     def get_me(self):
+        """Request resources Toggl API endpoint with the 'me' section."""
         return self.get(section='me')

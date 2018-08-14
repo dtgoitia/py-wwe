@@ -13,9 +13,7 @@ import os
 # (08:30:00, 16:00:00)
 
 def partition_days_between(start_date: datetime.datetime, end_date: datetime.datetime):
-    """
-    Generates a stream of tuples with two datetimes that run from the
-    start_date to the end_date.
+    """Generate a stream of tuples with two datetimes that run from the start_date to the end_date.
 
     Input> 2000-01-01 12:34:56 - 2000-01-03 19:00:19
     Would generate:
@@ -31,17 +29,25 @@ def partition_days_between(start_date: datetime.datetime, end_date: datetime.dat
 
 
 def filter_out_weekends(times):
+    """Filter out Saturday and Sunday."""
     for start, end in times:
         if start.weekday() < 5:
             yield (start, end)
 
 
-def filter_out_non_working_hours(times):
+def filter_out_non_working_hours(times):  # TODO: what's this?
+    """Filter out non-working hours."""
     for start, end in times:
         pass
 
 
-def get_project_ids(target_client: str, t: TogglWrap):
+def get_project_ids(target_client: str, t: TogglWrap) -> set:
+    """Return all project IDs accross all workspaces for a given client.
+
+    Args:
+        target_client (str): name of the client from whom to get the projects.
+        t (TogglWrap): Toggl client wrapper.
+    """
     work_projects = set()
     for workspace in t.toggl.get_workspaces():
         workspace_id = workspace['id']
@@ -61,13 +67,14 @@ def get_project_ids(target_client: str, t: TogglWrap):
 
 
 def is_work(entry: dict, work_projects: List[str]):
-    # print(f'{entry["pid"]} in {work_projects}')
+    """Return true if the entrie belongs to any of the work_projects."""
     if entry['pid'] in work_projects:
         return True
     return False
 
 
 def get_weekends_between(start: datetime.datetime, end: datetime.datetime) -> int:
+    """Return the number of weekend days between two given dates."""
     result = 0
     current_date = start
     while current_date < end:
@@ -78,6 +85,7 @@ def get_weekends_between(start: datetime.datetime, end: datetime.datetime) -> in
 
 
 def get_personal_holidays(days: any, start: datetime.datetime, end: datetime.datetime) -> float:
+    """Return the number of personal holidays between two given dates."""
     result = 0
     for day in days:
         current_day = datetime.datetime.strptime(day[0], '%Y-%m-%d')
@@ -87,13 +95,15 @@ def get_personal_holidays(days: any, start: datetime.datetime, end: datetime.dat
 
 
 def format_balance(delta: datetime.timedelta) -> str:
-    """
-    Remove the microseconds from the time delta
-    """
+    """Remove the microseconds from the time delta."""
     return str(datetime.timedelta(days=delta.days) + datetime.timedelta(seconds=delta.seconds))
 
 
 def print_balance(to_work: datetime.datetime, worked: datetime.datetime):
+    """Format balance and print it on screen.
+
+    This function considers whether the balance is positive or negative, and format it consequently.
+    """
     if to_work > worked:
         print(f"balance = {format_balance(to_work-worked)} left")
     else:
@@ -101,6 +111,7 @@ def print_balance(to_work: datetime.datetime, worked: datetime.datetime):
 
 
 def main():
+    """Run main function."""
     config_path = os.path.join(os.path.expanduser('~'), ".wweconfig.json")
     config = import_config(config_path)
     toggl_token = config['toggl_token']
@@ -126,7 +137,7 @@ def main():
     full_timespan = now - start
     days_to_work = full_timespan.days - bank_holidays - weekends - personal_holidays
     hours_to_work = (days_to_work + 1) * config['working_day_hours']
-    to_work = datetime.timedelta(seconds=(hours_to_work*3600))
+    to_work = datetime.timedelta(seconds=(hours_to_work * 3600))
     print_balance(to_work, worked)
 
 
