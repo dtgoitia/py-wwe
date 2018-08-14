@@ -1,8 +1,16 @@
-__pycache__/
-/.pytest_cache/
+# Sensitive files
 config.json
-/.vscode/
-.idea
+
+# Python
+__pycache__/
 *.egg-info/
 *.egg
+
+# Pip
 /build
+
+# PyTest
+/.pytest_cache/
+
+# MyPy
+/.mypy_cache/
