@@ -27,3 +27,8 @@ Therefore, to have specific models (storage) would be:
 ## Configuration file
 
 The `wwe` command will look for the file `.wweconfig.json` in the `HOME` directory.
+
+## TODO
+- Add types to existing codebase.
+- Implement `vulture` to find dead code.
+- Add more unit tests.
