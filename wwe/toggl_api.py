@@ -2,13 +2,14 @@
 
 import requests
 import datetime
+from typing import Union
 
 from requests.auth import HTTPBasicAuth
 
 TOGGL_TIMESTAMP_FORMAT = '%Y-%m-%dT%H:%M:%S'
 
 
-def write_toggl_timestamp(ts: datetime.datetime):
+def write_toggl_timestamp(ts: datetime.datetime) -> str:
     """Write datetime in toggl format or default to empty string."""
     if not ts:
         return ''
@@ -20,12 +21,12 @@ def write_toggl_timestamp(ts: datetime.datetime):
     return ts.strftime(TOGGL_TIMESTAMP_FORMAT) + tz
 
 
-def read_toggl_timestamp(text: str):
-    """Read datetime in toggl format or return None."""
+def read_toggl_timestamp(text: str) -> Union[datetime.datetime, str]:
+    """Read datetime in Toggl format or return None."""
     try:
         ts, _, tz_2 = text.rpartition(':')
-        ts = datetime.datetime.strptime(ts + tz_2, '%Y-%m-%dT%H:%M:%S%z')
-        return ts
+        ts_formatted = datetime.datetime.strptime(ts + tz_2, '%Y-%m-%dT%H:%M:%S%z')
+        return ts_formatted
     except (ValueError, AttributeError) as e:
         return text
 

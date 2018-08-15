@@ -28,7 +28,7 @@ def partition_days_between(start_date: datetime.datetime, end_date: datetime.dat
         current_ts = last_time_today + datetime.timedelta(seconds=1)
 
 
-def filter_out_weekends(times):
+def filter_out_weekends(times) -> tuple:
     """Filter out Saturday and Sunday."""
     for start, end in times:
         if start.weekday() < 5:
