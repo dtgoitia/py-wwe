@@ -6,6 +6,7 @@ name = "pypi"
 [packages]
 pytz = "*"
 tzlocal = "*"
+requests = "*"
 
 [dev-packages]
 "autopep8" = "*"
@@ -17,4 +18,4 @@ rope = "*"
 mypy = "*"
 
 [requires]
-python_version = "3.6"
+python_version = "3.7"
