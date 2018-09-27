@@ -2,6 +2,17 @@
 from __future__ import absolute_import, print_function, unicode_literals
 
 from setuptools import find_packages, setup
+import json
+
+with open('Pipfile.lock') as fd:
+    lock_data = json.load(fd)
+
+    install_requires = []
+    for package_name, package_data in lock_data['default'].items():
+        if 'version' not in package_data:
+            raise ValueError(f'Package {package_name} does '
+                             f'not have version key: {package_data}')
+        install_requires.append(package_name + package_data['version'])
 
 setup(
     name='wwe',
@@ -24,7 +35,7 @@ setup(
     include_package_data=True,
     zip_safe=False,
     keywords=['toggl'],     # TODO: Add relevant tags
-    install_requires=['requests', 'setuptools', 'tzlocal'],    # TODO: Automate extraction from Pipfile?
+    install_requires=install_requires,
     entry_points={
         "console_scripts": [
             'wwe=wwe.cli:main',
