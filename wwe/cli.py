@@ -112,7 +112,7 @@ def print_balance(to_work: datetime.datetime, worked: datetime.datetime):
 
 def main():
     """Run main function."""
-    config_path = os.path.join(os.path.expanduser('~'), ".wweconfig.json")
+    config_path = os.path.join(os.path.expanduser('~'), ".wwe/config.json")
     config = import_config(config_path)
     toggl_token = config['toggl_token']
     start = datetime.datetime.strptime(config['client']['start_date'], '%Y-%m-%d')
