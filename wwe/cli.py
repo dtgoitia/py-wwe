@@ -1,11 +1,10 @@
 from pprint import pprint as print
 import functools
 from wwe.toggl import TogglWrap
-from wwe.config import import_config
+from wwe.config import load_config
 from wwe.gov import gov_uk_bank_holidays_between
 from typing import List
 import datetime
-import os
 
 
 # (start, end)
@@ -112,13 +111,12 @@ def print_balance(to_work: datetime.datetime, worked: datetime.datetime):
 
 def main():
     """Run main function."""
-    config_path = os.path.join(os.path.expanduser('~'), ".wwe/config.json")
-    config = import_config(config_path)
-    toggl_token = config['toggl_token']
+    config = load_config()
     start = datetime.datetime.strptime(config['client']['start_date'], '%Y-%m-%d')
-    t = TogglWrap(token=toggl_token)
+    t = TogglWrap(token=config['toggl_token'])
     project_ids = get_project_ids(target_client=config['client']['name'], t=t)
     filters = [functools.partial(is_work, work_projects=project_ids)]
+
     worked = datetime.timedelta()
     for entry in t.get_filtered_entries(filters=filters, start=start):
         duration = entry['duration']
