@@ -83,8 +83,19 @@ def get_weekends_between(start: datetime.datetime, end: datetime.datetime) -> in
     return result
 
 
-def get_personal_holidays(days: any, start: datetime.datetime, end: datetime.datetime) -> float:
-    """Return the number of personal holidays between two given dates."""
+def get_holiday_amount(days: any, start: datetime.datetime, end: datetime.datetime) -> float:
+    """Return the number of holidays between two given dates.
+
+    Any dates later than the current date are ignored, as they
+    represent booked annual leaves for the future.
+
+    Example of 'day' argument values: ["2018-11-07", 1], ["2018-11-08", 0.5]...
+
+    :param days: list of tuples, as shown above
+    :param start: date from which to start counting (included)
+    :param end: last date to be included in the count
+    :returns: number of personal holidays
+    """
     result = 0
     for day in days:
         current_day = datetime.datetime.strptime(day[0], '%Y-%m-%d')
@@ -129,16 +140,18 @@ def main():
         worked += duration
 
     now = datetime.datetime.now()
-    bank_holidays = len(gov_uk_bank_holidays_between(start, now))
+    bank_holidays = gov_uk_bank_holidays_between(start, now)
+    bank_holidays_amount = len(bank_holidays)
     weekends = get_weekends_between(start, now)
-    personal_holidays = get_personal_holidays(config['personal_holidays'], start, now)
+    personal_holidays = get_holiday_amount(config['personal_holidays'], start, now)
+    company_bonus_days = get_holiday_amount(config['company_bonus_days'], start, now)
     full_timespan = now - start
-    days_to_work = full_timespan.days - bank_holidays - weekends - personal_holidays
+    days_to_work = full_timespan.days - bank_holidays_amount - weekends - personal_holidays - company_bonus_days
     hours_to_work = (days_to_work + 1) * config['working_day_hours']
     to_work = datetime.timedelta(seconds=(hours_to_work * 3600))
     print_balance(to_work, worked)
 
 
-# # Uncomment below to debug
-# if __name__ == "__main__":
-#     main()
+# Uncomment below to debug
+if __name__ == "__main__":
+    main()
