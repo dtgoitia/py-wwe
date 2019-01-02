@@ -1,3 +1,7 @@
+## Config
+
+See `~/.wwe/config.json` file.
+
 ## Architecture
 
 I want to know:
