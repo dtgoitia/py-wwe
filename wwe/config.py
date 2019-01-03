@@ -2,11 +2,11 @@ import json
 import os
 
 
-def load_config(path='.wwe/config.json'):
+def load_config(path='.config/wwe/config.json'):
     """Load and return configuration file.
 
-    If no path is provided, default configuration (~/.wwe/config.json)
-    is loaded.
+    If no path is provided, default configuration is loaded from
+    the config folder: ~/.config/wwe/config.json
     """
     user_home_path = os.path.expanduser('~')
     config_path = os.path.join(user_home_path, path)
