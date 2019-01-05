@@ -152,6 +152,6 @@ def main():
     print_balance(to_work, worked)
 
 
-# Uncomment below to debug
+# Required for debugging:
 if __name__ == "__main__":
     main()
