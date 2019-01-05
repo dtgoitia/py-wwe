@@ -4,18 +4,19 @@ verify_ssl = true
 name = "pypi"
 
 [packages]
+click = "*"
 pytz = "*"
-tzlocal = "*"
 requests = "*"
+tzlocal = "*"
 
 [dev-packages]
 "autopep8" = "*"
 "flake8" = "*"
-pytest = "*"
-rope = "*"
 "flake8-docstrings" = "*"
 "flake8-per-file-ignores" = "*"
 mypy = "*"
+pytest = "*"
+rope = "*"
 
 [requires]
 python_version = "3.7"

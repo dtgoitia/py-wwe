@@ -1,10 +1,11 @@
-from pprint import pprint as print
+import click
+import datetime
 import functools
+from pprint import pprint as print
+from typing import List
 from wwe.toggl import TogglWrap
 from wwe.config import load_config
 from wwe.gov import gov_uk_bank_holidays_between
-from typing import List
-import datetime
 
 
 # (start, end)
@@ -119,9 +120,11 @@ def print_balance(to_work: datetime.datetime, worked: datetime.datetime):
     else:
         print(f"balance = {format_balance(worked-to_work)} done extra")
 
-
-def main():
+@click.command()
+@click.option('--verbose', '-v', is_flag=True, default=False)
+def main(verbose):
     """Run main function."""
+    click.echo(f'verbose mode is {verbose}')
     config = load_config()
     start = datetime.datetime.strptime(config['client']['start_date'], '%Y-%m-%d')
     t = TogglWrap(token=config['toggl_token'])
