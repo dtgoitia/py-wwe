@@ -1,11 +1,12 @@
 import click
 import datetime
 import functools
-from pprint import pprint as print
 from typing import List
 from wwe.toggl import TogglWrap
 from wwe.config import load_config
 from wwe.gov import gov_uk_bank_holidays_between
+import wwe.log as log
+from wwe.log import set_verbose_mode
 
 
 # (start, end)
@@ -73,7 +74,7 @@ def is_work(entry: dict, work_projects: List[str]):
     return False
 
 
-def get_weekends_between(start: datetime.datetime, end: datetime.datetime) -> int:
+def get_weekend_days_between(start: datetime.datetime, end: datetime.datetime) -> int:
     """Return the number of weekend days between two given dates."""
     result = 0
     current_date = start
@@ -105,9 +106,42 @@ def get_holiday_amount(days: any, start: datetime.datetime, end: datetime.dateti
     return result
 
 
+def get_personal_holidays_between(config: any, start: datetime.datetime, end: datetime.datetime) -> float:
+    """Return the number of days off booked by a person between two given dates."""
+    if log.verbose:
+        click.echo('Loading personal holidays from configuration file...')
+    personal_holidays = config['personal_holidays']
+    return get_holiday_amount(personal_holidays, start, end)
+
+
+def get_company_holidays_between(config: any, start: datetime.datetime, end: datetime.datetime) -> float:
+    """Return the number of extra days off a by a person between two given dates."""
+    if log.verbose:
+        click.echo('Loading company holidays from configuration file...')
+    return get_holiday_amount(config['company_bonus_days'], start, end)
+
+
 def format_balance(delta: datetime.timedelta) -> str:
-    """Remove the microseconds from the time delta."""
-    return str(datetime.timedelta(days=delta.days) + datetime.timedelta(seconds=delta.seconds))
+    """Return a formated string with the time delta.
+
+    Remove the microseconds from the time delta and only show the required
+    time units.
+    """
+    days = delta.days
+    secs = delta.seconds
+    hours, remainder = divmod(secs, 3600)
+    minutes, seconds = divmod(remainder, 60)
+
+    formatted_chunks = ()
+    if days:
+        formatted_chunks += (f'{days}d', )
+    if hours:
+        formatted_chunks += (f'{hours}h', )
+    if minutes:
+        formatted_chunks += (f'{minutes}min',)
+    result = ', '.join(formatted_chunks)
+
+    return result
 
 
 def print_balance(to_work: datetime.datetime, worked: datetime.datetime):
@@ -116,15 +150,16 @@ def print_balance(to_work: datetime.datetime, worked: datetime.datetime):
     This function considers whether the balance is positive or negative, and format it consequently.
     """
     if to_work > worked:
-        print(f"balance = {format_balance(to_work-worked)} left")
+        click.echo(f"You need to work {format_balance(to_work-worked)} more today")
     else:
-        print(f"balance = {format_balance(worked-to_work)} done extra")
+        click.echo(f"You have worked {format_balance(worked-to_work)} so far")
+
 
 @click.command()
 @click.option('--verbose', '-v', is_flag=True, default=False)
 def main(verbose):
     """Run main function."""
-    click.echo(f'verbose mode is {verbose}')
+    set_verbose_mode(verbose)
     config = load_config()
     start = datetime.datetime.strptime(config['client']['start_date'], '%Y-%m-%d')
     t = TogglWrap(token=config['toggl_token'])
@@ -144,12 +179,14 @@ def main(verbose):
 
     now = datetime.datetime.now()
     bank_holidays = gov_uk_bank_holidays_between(start, now)
-    bank_holidays_amount = len(bank_holidays)
-    weekends = get_weekends_between(start, now)
-    personal_holidays = get_holiday_amount(config['personal_holidays'], start, now)
-    company_bonus_days = get_holiday_amount(config['company_bonus_days'], start, now)
+    weekend_days = get_weekend_days_between(start, now)
+    personal_holidays = get_personal_holidays_between(config, start, now)
+    company_holidays = get_company_holidays_between(config, start, now)
     full_timespan = now - start
-    days_to_work = full_timespan.days - bank_holidays_amount - weekends - personal_holidays - company_bonus_days
+    if log.verbose:
+        click.echo('Calculating current work hour balance...')
+    days_to_work = full_timespan.days - bank_holidays \
+        - weekend_days - personal_holidays - company_holidays
     hours_to_work = (days_to_work + 1) * config['working_day_hours']
     to_work = datetime.timedelta(seconds=(hours_to_work * 3600))
     print_balance(to_work, worked)

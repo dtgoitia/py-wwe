@@ -1,7 +1,8 @@
+import click
 from datetime import datetime, timedelta, date
-from wwe.toggl_api import TogglAPI
 from tzlocal import get_localzone
-# import pprint
+import wwe.log as log
+from wwe.toggl_api import TogglAPI
 
 
 def filter_entries(entries, filters):
@@ -35,9 +36,11 @@ class TogglWrap:
     def __init__(self, token=""):
         """Instantiate TogglAPI client if there a token is passed."""
         assert token
+        if log.verbose:
+            click.echo('Instantiating Toggle API wrapper...')
         self.toggl = TogglAPI(api_token=token)
 
-    def get_filtered_entries(self, filters, start: datetime=None, end: datetime=None):
+    def get_filtered_entries(self, filters, start: datetime = None, end: datetime = None):
         """Return only the entries between two given dates which pass the passed `filters`."""
         if start is None:
             start = datetime.combine(date.today(), datetime.min.utctime())
@@ -82,6 +85,8 @@ class TogglWrap:
         """Return all clients in all workspaces."""
         w = self.toggl.workspaces()
         id = w[0]["id"]
+        if log.verbose:
+            click.echo(f"Fetching all clients in the workspace {id}...")
         clients = self.toggl.clients(workspace_id=id)
 
         result = []
@@ -93,14 +98,16 @@ class TogglWrap:
 
         if len(result) > 0:
             self._clients = result
-
-        print("---fetching clients!")
+        if log.verbose:
+            click.echo(f"{len(result)} clients found")
         return result
 
     def projects(self):
         """Return all projects in all workspaces."""
         w = self.toggl.workspaces()
         id = w[0]["id"]
+        if log.verbose:
+            click.echo(f"Fetching all projects in the workspace {id}...")
         projects = self.toggl.projects(workspace_id=id)
 
         result = []
@@ -113,8 +120,8 @@ class TogglWrap:
 
         if len(result) > 0:
             self._projects = result
-
-        print("---fetching projects!")
+        if log.verbose:
+            click.echo(f"{len(result)} clients found")
         return result
 
     def tasks(self, start: datetime, end: datetime, client=""):
@@ -123,7 +130,8 @@ class TogglWrap:
             if start is not None and end is not None:
                 projects = self._project_by_client(client)
 
-                print("\nfetching your tasks!")
+                if log.verbose:
+                    click.echo(f"Fetching tasks from {start} to {end}...")
                 s = start.isoformat()
                 e = (end + timedelta(days=1)).isoformat()
                 entries = self.toggl.get_time_entries(
