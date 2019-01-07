@@ -161,7 +161,7 @@ def print_balance(to_work: datetime.datetime, worked: datetime.datetime):
 
 
 @click.command()
-@click.option('--verbose', '-v', is_flag=True, default=False)
+@click.option('--verbose', '-v', is_flag=True, default=False, help='Enable logging')
 def main(verbose):
     """Run main function."""
     set_verbose_mode(verbose)
