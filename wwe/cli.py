@@ -1,4 +1,5 @@
 import click
+from colorama import init, Fore, Style
 import datetime
 import functools
 from typing import List
@@ -150,9 +151,13 @@ def print_balance(to_work: datetime.datetime, worked: datetime.datetime):
     This function considers whether the balance is positive or negative, and format it consequently.
     """
     if to_work > worked:
-        click.echo(f"You need to work {format_balance(to_work-worked)} more today")
+        balance = format_balance(to_work - worked)
+        coloured_balance = Fore.RED + balance + Style.RESET_ALL
+        click.echo(f"You need to work {coloured_balance} more today")
     else:
-        click.echo(f"You have worked {format_balance(worked-to_work)} so far")
+        balance = format_balance(worked - to_work)
+        coloured_balance = Fore.GREEN + balance + Style.RESET_ALL
+        click.echo(f"You have worked {coloured_balance} extra so far")
 
 
 @click.command()
@@ -160,6 +165,7 @@ def print_balance(to_work: datetime.datetime, worked: datetime.datetime):
 def main(verbose):
     """Run main function."""
     set_verbose_mode(verbose)
+    init()  # initialize colorama package
     config = load_config()
     start = datetime.datetime.strptime(config['client']['start_date'], '%Y-%m-%d')
     t = TogglWrap(token=config['toggl_token'])
