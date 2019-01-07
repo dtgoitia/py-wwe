@@ -1,5 +1,6 @@
 # Credit to Mosab Ibrahim <mosab.a.ibrahim@gmail.com>
 
+from cachier import cachier
 import requests
 import click
 import datetime
@@ -53,6 +54,11 @@ def deserialize_toggl(obj):
     return new_obj
 
 
+class RequestParameters(dict):
+    def __hash__(self):
+        return hash(tuple(sorted(self.items())))
+
+
 class TogglAPI(object):
     """A wrapper for Toggl API."""
 
@@ -64,8 +70,17 @@ class TogglAPI(object):
         self.session.auth = HTTPBasicAuth(api_token, 'api_token')
         self.session.headers = {'content-type': 'application/json'}
 
+    def __hash__(self):
+        """Always return same hash.
+        
+        In order to cache TODO
+        """
+        return 1234567
+
+    @cachier()
     def get(self, section, params=None):
         """Request resources Toggl API endpoint."""
+        click.echo(f'GET\n  section={section}\n  params={params}\n  self={self.__hash__()}')
         response = self.session.get(
             f'https://www.toggl.com/api/v8/{section}', params=params)
         if not response.ok:
@@ -92,10 +107,10 @@ class TogglAPI(object):
         assert start_date.tzinfo is not None
         if end_date:
             assert end_date.tzinfo is not None
-        request_parameters = {
+        request_parameters = RequestParameters({
             'start_date': write_toggl_timestamp(start_date),
             'end_date': write_toggl_timestamp(end_date),
-        }
+        })
 
         last_entry_date = datetime.datetime(datetime.MINYEAR, 1, 1, tzinfo=start_date.tzinfo)
         if end_date is None:

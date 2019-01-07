@@ -160,6 +160,11 @@ def print_balance(to_work: datetime.datetime, worked: datetime.datetime):
         click.echo(f"You have worked {coloured_balance} extra so far")
 
 
+def clear_cache() -> None:
+    """Clear cache of all cached functions."""
+    gov_uk_bank_holidays_between.clear_cache()
+
+
 @click.command()
 @click.option('--verbose', '-v', is_flag=True, default=False, help='Enable logging')
 def main(verbose):
