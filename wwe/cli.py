@@ -172,7 +172,7 @@ def main(verbose: bool, end: datetime.datetime):
     config = load_config()
     start = datetime.datetime.strptime(config['client']['start_date'], DATE_INPUT_FORMAT)
     adjusted_end = end + datetime.timedelta(days=1) if end else None
-    if datetime.datetime.now() < end:
+    if end and datetime.datetime.now() < end:
         click.echo(f'{end.strftime(DATE_INPUT_FORMAT)} is a future date. Sorry, not supported')
     t = TogglWrap(token=config['toggl_token'])
     project_ids = get_project_ids(target_client=config['client']['name'], t=t)
