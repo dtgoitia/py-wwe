@@ -10,9 +10,11 @@ import wwe.log as log
 from wwe.log import set_verbose_mode
 
 
+DATE_INPUT_FORMAT = '%Y-%m-%d'
 # (start, end)
 # (00:00:00, 23:59:59)
 # (08:30:00, 16:00:00)
+
 
 def partition_days_between(start_date: datetime.datetime, end_date: datetime.datetime):
     """Generate a stream of tuples with two datetimes that run from the start_date to the end_date.
@@ -79,7 +81,7 @@ def get_weekend_days_between(start: datetime.datetime, end: datetime.datetime) -
     """Return the number of weekend days between two given dates."""
     result = 0
     current_date = start
-    while current_date < end:
+    while current_date <= end:
         if current_date.weekday() > 4:
             result += 1
         current_date += datetime.timedelta(days=1)
@@ -162,18 +164,22 @@ def print_balance(to_work: datetime.datetime, worked: datetime.datetime):
 
 @click.command()
 @click.option('--verbose', '-v', is_flag=True, default=False, help='Enable logging')
-def main(verbose):
+@click.option('--end', '-e', type=click.DateTime([DATE_INPUT_FORMAT]), help='End date (included)')
+def main(verbose: bool, end: datetime.datetime):
     """Run main function."""
     set_verbose_mode(verbose)
     init()  # initialize colorama package
     config = load_config()
-    start = datetime.datetime.strptime(config['client']['start_date'], '%Y-%m-%d')
+    start = datetime.datetime.strptime(config['client']['start_date'], DATE_INPUT_FORMAT)
+    adjusted_end = end + datetime.timedelta(days=1) if end else None
+    if datetime.datetime.now() < end:
+        click.echo(f'{end.strftime(DATE_INPUT_FORMAT)} is a future date. Sorry, not supported')
     t = TogglWrap(token=config['toggl_token'])
     project_ids = get_project_ids(target_client=config['client']['name'], t=t)
     filters = [functools.partial(is_work, work_projects=project_ids)]
 
     worked = datetime.timedelta()
-    for entry in t.get_filtered_entries(filters=filters, start=start):
+    for entry in t.get_filtered_entries(filters=filters, start=start, end=adjusted_end):
         duration = entry['duration']
 
         # unfinished time entries have negative durations
@@ -183,17 +189,20 @@ def main(verbose):
             duration = now - entry['start']
         worked += duration
 
-    now = datetime.datetime.now()
-    bank_holidays = gov_uk_bank_holidays_between(start, now)
-    weekend_days = get_weekend_days_between(start, now)
-    personal_holidays = get_personal_holidays_between(config, start, now)
-    company_holidays = get_company_holidays_between(config, start, now)
-    full_timespan = now - start
+    end = datetime.datetime.now() if end is None else end
+    bank_holidays = gov_uk_bank_holidays_between(start, end)
+    weekend_days = get_weekend_days_between(start, end)
+    personal_holidays = get_personal_holidays_between(config, start, end)
+    company_holidays = get_company_holidays_between(config, start, end)
+    full_timespan = end - start
     if log.verbose:
         click.echo('Calculating current work hour balance...')
-    days_to_work = full_timespan.days - bank_holidays \
-        - weekend_days - personal_holidays - company_holidays
-    hours_to_work = (days_to_work + 1) * config['working_day_hours']
+    days_to_work = full_timespan.days + 1 \
+        - bank_holidays \
+        - weekend_days \
+        - personal_holidays \
+        - company_holidays
+    hours_to_work = days_to_work * config['working_day_hours']
     to_work = datetime.timedelta(seconds=(hours_to_work * 3600))
     print_balance(to_work, worked)
 
