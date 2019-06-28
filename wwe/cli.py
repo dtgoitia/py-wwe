@@ -7,7 +7,7 @@ from wwe.toggl import TogglWrap
 from wwe.config import load_config
 from wwe.gov import gov_uk_bank_holidays_between
 import wwe.log as log
-from wwe.log import set_verbose_mode
+from wwe.log import format_log, set_verbose_mode
 
 
 DATE_INPUT_FORMAT = '%Y-%m-%d'
@@ -181,6 +181,8 @@ def main(verbose: bool, end: datetime.datetime):
     worked = datetime.timedelta()
     for entry in t.get_filtered_entries(filters=filters, start=start, end=adjusted_end):
         duration = entry['duration']
+        if log.verbose:
+            click.echo(format_log(entry))
 
         # unfinished time entries have negative durations
         if duration.days < 0:

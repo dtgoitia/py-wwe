@@ -1,5 +1,5 @@
 import click
-from datetime import datetime, timedelta, date
+from datetime import datetime, date
 from tzlocal import get_localzone
 import wwe.log as log
 from wwe.toggl_api import TogglAPI
@@ -123,23 +123,3 @@ class TogglWrap:
         if log.verbose:
             click.echo(f"{len(result)} clients found")
         return result
-
-    def tasks(self, start: datetime, end: datetime, client=""):
-        """Return tasks from Toggl between two given dates for a client."""
-        if self.toggl is not None:
-            if start is not None and end is not None:
-                projects = self._project_by_client(client)
-
-                if log.verbose:
-                    click.echo(f"Fetching tasks from {start} to {end}...")
-                s = start.isoformat()
-                e = (end + timedelta(days=1)).isoformat()
-                entries = self.toggl.get_time_entries(
-                    start_date=s, end_date=e)
-
-                for entry in entries:
-                    for p in projects:
-                        if entry["pid"] == p["id"]:
-                            entry["project"] = p["name"]
-                            entry["client"] = p["client"]
-                return entries
